@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คลังผลงานการสอน - BCLS & AED Gen.2</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background: #f4f7f6; color: #333; }
+        .navbar { background: linear-gradient(90deg, #0d6efd, #0056b3); padding: 10px 0; }
+        .navbar-brand { font-size: 1rem; font-weight: 700; color: white !important; }
+        
+        /* Card Highlights - แสดงรูปแบบ Cover เพื่อความสวยงาม */
+        .highlight-card { border: none; border-radius: 20px; overflow: hidden; transition: 0.3s; background: white; box-shadow: 0 10px 20px rgba(0,0,0,0.05); cursor: pointer; }
+        .highlight-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+        .highlight-img { height: 200px; width: 100%; object-fit: cover; background: #eee; }
+        .badge-date { background: #e7f1ff; color: #0d6efd; padding: 5px 15px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; }
+        
+        /* Table Style */
+        .table-card { border-radius: 20px; border: none; background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .table thead { background-color: #f8f9fa; }
+        
+        /* Modal Style - อัปเดตให้รูปแสดงผลเต็มสัดส่วน (Contain) */
+        .modal-content { border-radius: 25px; border: none; }
+        .gal-thumb { 
+            height: 150px; 
+            width: 100%; 
+            object-fit: contain; /* แสดงรูปเต็มใบใน Modal */
+            background: #f8f9fa;
+            border-radius: 10px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        .gal-thumb:hover { transform: scale(1.05); filter: brightness(0.9); }
+        #loading { position: fixed; inset: 0; background: #fff; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner-border text-primary"></div></div>
+
+<nav class="navbar navbar-dark shadow-sm mb-4">
+    <div class="container py-1 text-start">
+        <a class="navbar-brand" href="index.html"><i class="fas fa-heartbeat me-2"></i>BCLS and AED Instructor Gen.2</a>
+        <a href="index.html" class="btn btn-outline-light btn-sm rounded-pill px-3">กลับหน้าหลัก</a>
+    </div>
+</nav>
+
+<div class="container pb-5 text-start">
+    <h4 class="fw-bold text-primary mb-4 border-start border-4 border-primary ps-3">ผลงานล่าสุด (Highlights)</h4>
+    <div class="row g-4" id="highlightBox">
+        <div class="col-12 text-center py-5">กำลังโหลดข้อมูลไฮไลท์...</div>
+    </div>
+
+    <div class="table-card p-4 mt-5 shadow-sm">
+        <h4 class="fw-bold mb-4 text-secondary"><i class="fas fa-archive me-2"></i>ประวัติการสอนทั้งหมด</h4>
+        <div class="table-responsive">
+            <table id="workTable" class="table table-hover w-100 align-middle">
+                <thead>
+                    <tr>
+                        <th>วันที่</th>
+                        <th>โครงการ / หลักสูตร</th>
+                        <th>สถานที่</th>
+                        <th>จำนวน</th>
+                        <th class="text-center">ดูรายละเอียด</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="workModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header border-0 pb-0 text-end"><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body p-4 pt-0">
+                <h3 class="fw-bold text-primary mb-1 text-start" id="mTitle"></h3>
+                <p class="text-muted mb-4 small text-start"><i class="fas fa-map-marker-alt text-danger me-1"></i> <span id="mLoc"></span></p>
+                
+                <div id="vdoBox" class="ratio ratio-16x9 mb-4 d-none rounded-4 overflow-hidden border bg-black shadow-sm">
+                    <iframe id="vdoIf" src="" allowfullscreen></iframe>
+                </div>
+
+                <div class="row g-2 mb-4 bg-light p-3 rounded-4 text-start">
+                    <div class="col-6 col-md-3">
+                        <span class="small text-muted">วันที่ออกสอน</span><br>
+                        <strong id="mDate" class="text-dark"></strong>
+                    </div>
+                    <div class="col-6 col-md-3 text-md-center">
+                        <span class="small text-muted">จำนวนผู้เรียน</span><br>
+                        <strong id="mCount" class="text-dark"></strong> คน
+                    </div>
+                    <div class="col-12 col-md-6 mt-2 mt-md-0 border-md-start ps-md-4">
+                        <span class="small text-muted">ทีมวิทยากร</span><br>
+                        <strong id="mStaff" class="text-dark small"></strong>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-dark mb-3 text-start"><i class="fas fa-camera-retro me-2 text-info"></i>ภาพบรรยากาศการสอน (รูปเต็มสัดส่วน)</h6>
+                <div id="galBox" class="row g-2 mb-4"></div>
+
+                <div id="driveBtnBox"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbxOJGohq26z4zmHuxEELdIrndEqnK_qHBKil0B_yhmQGZNG_tfGl-uEIPFdLcv339ui/exec';
+
+    // ฟังก์ชันจัดการวันที่ พ.ศ. แบบตรวจสอบปีล่วงหน้า
+    const fmtThaiDate = d => {
+        if(!d) return '-';
+        const date = new Date(d);
+        if(isNaN(date.getTime())) return d;
+        let year = date.getFullYear();
+        if (year < 2400) year += 543;
+        return `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')}/${year}`;
+    };
+
+    const getYT = url => {
+        if(!url) return "";
+        let id = "";
+        if(url.includes('v=')) id = url.split('v=')[1].split('&')[0];
+        else if(url.includes('youtu.be/')) id = url.split('youtu.be/')[1];
+        return id ? `https://www.youtube.com/embed/${id}` : url;
+    };
+
+    window.onload = async () => {
+        try {
+            const res = await fetch(`${scriptUrl}?action=getWorks&t=${Date.now()}`);
+            const data = await res.json();
+            renderWorks(data);
+        } catch (e) {
+            console.error(e);
+            document.getElementById('highlightBox').innerHTML = '<p class="text-danger">โหลดข้อมูลล้มเหลว</p>';
+        }
+        document.getElementById('loading').style.display = 'none';
+    };
+
+    function renderWorks(data) {
+        const hb = document.getElementById('highlightBox');
+        const tb = document.getElementById('tableBody');
+        hb.innerHTML = ''; tb.innerHTML = '';
+
+        const sortedData = [...data].reverse();
+
+        sortedData.forEach((w, i) => {
+            const date = fmtThaiDate(w.date);
+            const img = w.imageurl || 'https://via.placeholder.com/400x200?text=No+Image';
+
+            if(i < 3) {
+                hb.innerHTML += `
+                <div class="col-md-4">
+                    <div class="card highlight-card h-100 shadow-sm" onclick='showDetail(${JSON.stringify(w)})'>
+                        <img src="${img}" class="highlight-img" onerror="this.src='https://via.placeholder.com/400x250?text=Image+Error'">
+                        <div class="card-body text-start">
+                            <span class="badge-date mb-2 d-inline-block">${date}</span>
+                            <h6 class="fw-bold text-dark mb-3 line-clamp-2">${w.title}</h6>
+                            <button class="btn btn-primary btn-sm w-100 rounded-pill fw-bold shadow-sm">ดูรายละเอียด</button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            tb.innerHTML += `
+            <tr>
+                <td class="small fw-bold">${date}</td>
+                <td class="fw-bold text-primary text-start">${w.title}</td>
+                <td class="small text-start">${w.location}</td>
+                <td><span class="badge bg-light text-dark border px-3">${w.studentcount} คน</span></td>
+                <td class="text-center">
+                    <button class="btn btn-outline-primary btn-sm rounded-circle" onclick='showDetail(${JSON.stringify(w)})'><i class="fas fa-eye"></i></button>
+                </td>
+            </tr>`;
+        });
+
+        $('#workTable').DataTable({
+            order: [[0, 'desc']],
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json' },
+            pageLength: 10
+        });
+    }
+
+    function showDetail(w) {
+        document.getElementById('mTitle').innerText = w.title;
+        document.getElementById('mLoc').innerText = w.location;
+        document.getElementById('mDate').innerText = fmtThaiDate(w.date);
+        document.getElementById('mCount').innerText = w.studentcount || 0;
+        document.getElementById('mStaff').innerText = w.instructors || "-";
+        
+        const vb = document.getElementById('vdoBox');
+        const vi = document.getElementById('vdoIf');
+        if(w.videourl) {
+            vb.classList.remove('d-none');
+            vi.src = getYT(w.videourl);
+        } else {
+            vb.classList.add('d-none');
+            vi.src = "";
+        }
+
+        const gb = document.getElementById('galBox');
+        gb.innerHTML = '';
+        
+        if(w.imageurl) {
+            gb.innerHTML += `<div class="col-4 col-md-3"><img src="${w.imageurl}" class="gal-thumb shadow-sm border" onclick="window.open('${w.imageurl}')"></div>`;
+        }
+
+        if(w.gallery) {
+            const imgs = w.gallery.split(',');
+            imgs.forEach(url => {
+                if(url.trim()) {
+                    gb.innerHTML += `<div class="col-4 col-md-3"><img src="${url.trim()}" class="gal-thumb shadow-sm" onclick="window.open('${url.trim()}')"></div>`;
+                }
+            });
+        }
+
+        const db = document.getElementById('driveBtnBox');
+        db.innerHTML = '';
+        if(w.folderlink) {
+            db.innerHTML = `
+            <a href="${w.folderlink}" target="_blank" class="btn btn-success btn-lg w-100 rounded-pill fw-bold shadow-sm py-3 mt-3">
+                <i class="fab fa-google-drive me-2"></i> ดูรูปภาพบรรยากาศทั้งหมดใน Google Drive
+            </a>`;
+        }
+        
+        new bootstrap.Modal(document.getElementById('workModal')).show();
+    }
+</script>
+</body>
+</html>

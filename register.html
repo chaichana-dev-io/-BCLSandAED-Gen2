@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลงทะเบียน - BCLS & AED Gen.2</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; }
+        .navbar { background-color: #007bff !important; height: 50px; }
+        .reg-card { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); background: #fff; }
+        .preview-container { width: 150px; height: 200px; margin: 0 auto; background: #eee; border-radius: 12px; border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .preview-container img { width: 100%; height: 100%; object-fit: cover; }
+        .is-invalid { border-color: #dc3545 !important; border-width: 2px !important; }
+        .is-valid { border-color: #198754 !important; border-width: 2px !important; }
+        .feedback-text { font-size: 0.85rem; font-weight: 600; margin-top: 5px; display: block; }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div id="loading">
+    <div class="spinner-border text-primary mb-2"></div>
+    <div class="fw-bold text-primary">กำลังตรวจสอบสถานะลำดับ...</div>
+</div>
+
+<nav class="navbar navbar-dark shadow-sm mb-4">
+    <div class="container d-flex justify-content-between align-items-center">
+        <span class="navbar-brand mb-0 h1" style="font-size: 16px;"><i class="fas fa-heartbeat me-2"></i>ระบบลงทะเบียนวิทยากร</span>
+        <a href="index.html" class="btn btn-outline-light btn-sm fw-bold"><i class="fas fa-home me-1"></i>กลับหน้าหลัก</a>
+    </div>
+</nav>
+
+<div class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card reg-card p-4">
+                <div class="text-center mb-4 border-bottom pb-3">
+                    <h3 class="fw-bold text-primary">ลงทะเบียนวิทยากรใหม่</h3>
+                    <p class="text-muted small">BCLS and AED Instructor Generation 2</p>
+                </div>
+
+                <form id="regForm">
+                    <div class="row g-3">
+                        <div class="col-md-5 mx-auto text-center mb-4">
+                            <label class="form-label fw-bold text-primary">เลขลำดับที่ในรุ่น</label>
+                            <input type="number" id="inpSeq" class="form-control form-control-lg text-center fw-bold border-primary shadow-sm" placeholder="ระบุเลข" required>
+                            <span id="seqFeedback" class="feedback-text"></span>
+                        </div>
+
+                        <div class="col-12 border-bottom mb-3"></div>
+
+                        <div class="col-12 text-center mb-3">
+                            <div class="preview-container mb-2">
+                                <img id="imgPreview" src="https://via.placeholder.com/300x400?text=3:4+Photo">
+                            </div>
+                            <label class="btn btn-sm btn-outline-primary shadow-sm mt-2">
+                                <i class="fas fa-camera me-1"></i> เลือกรูปถ่ายหน้าตรง
+                                <input type="file" id="inpFile" hidden accept="image/*" required>
+                            </label>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">ชื่อ - นามสกุล</label>
+                            <input type="text" id="inpName" class="form-control" placeholder="กรอกชื่อและนามสกุล" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">ชื่อเล่น</label>
+                            <input type="text" id="inpNick" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">เบอร์โทรศัพท์</label>
+                            <input type="tel" id="inpPhone" class="form-control" placeholder="0XXXXXXXXX" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">ที่อยู่ปัจจุบัน</label>
+                            <textarea id="inpAddr" class="form-control" rows="2" placeholder="ระบุที่อยู่เพื่อใช้ติดต่อ"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" id="btnSubmit" class="btn btn-primary btn-lg w-100 fw-bold shadow" disabled>
+                            กรุณารอโหลดข้อมูล...
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // URL ที่คุณบันทึกไว้ล่าสุด
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbyOlWV4qZUmvi7cBwz3x6E0ZZkYxQwOERYBCzhUx9wQVFLc6qklQWULX-Nd751eq79l/exec';
+    let membersRAM = [];
+    let isDataLoaded = false;
+
+    // โหลดเฉพาะเลขลำดับมาเก็บไว้เช็คซ้ำ (ข้อมูลจิ๋วมาก โหลดแป๊บเดียวเสร็จ)
+    window.onload = async () => {
+        try {
+            const res = await fetch(`${scriptUrl}?action=getOnlySeq&t=${new Date().getTime()}`);
+            membersRAM = await res.json();
+            isDataLoaded = true;
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('btnSubmit').disabled = false;
+            document.getElementById('btnSubmit').innerText = "บันทึกข้อมูลและยืนยัน";
+        } catch (e) { 
+            console.error("Load Failed");
+            document.getElementById('loading').style.display = 'none';
+        }
+    };
+
+    const inpSeq = document.getElementById('inpSeq');
+    const feedback = document.getElementById('seqFeedback');
+    const btnSubmit = document.getElementById('btnSubmit');
+
+    inpSeq.addEventListener('input', function() {
+        const val = this.value.trim();
+        if (!val) { resetState(); return; }
+        if (!isDataLoaded) { feedback.innerHTML = "กำลังตรวจสอบ..."; return; }
+
+        if (membersRAM.includes(String(val))) {
+            this.classList.add('is-invalid');
+            this.classList.remove('is-valid');
+            feedback.innerHTML = `<span class="text-danger">ลำดับที่ ${val} นี้ลงทะเบียนแล้ว</span>`;
+            btnSubmit.disabled = true;
+        } else {
+            this.classList.add('is-valid');
+            this.classList.remove('is-invalid');
+            feedback.innerHTML = `<span class="text-success">ลำดับที่ ${val} สามารถลงทะเบียนได้</span>`;
+            btnSubmit.disabled = false;
+        }
+    });
+
+    function resetState() {
+        inpSeq.classList.remove('is-invalid', 'is-valid');
+        feedback.innerHTML = "";
+        btnSubmit.disabled = false;
+    }
+
+    document.getElementById('inpFile').onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) document.getElementById('imgPreview').src = URL.createObjectURL(file);
+    };
+
+    document.getElementById('regForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const confirm = await Swal.fire({ title: 'ยืนยันการลงทะเบียน?', icon: 'question', showCancelButton: true });
+        if (!confirm.isConfirmed) return;
+
+        document.getElementById('loading').style.display = 'flex';
+        const file = document.getElementById('inpFile').files[0];
+        const payload = {
+            action: 'register',
+            sequence: inpSeq.value,
+            fullName: document.getElementById('inpName').value,
+            nickname: document.getElementById('inpNick').value,
+            phone: document.getElementById('inpPhone').value,
+            address: document.getElementById('inpAddr').value
+        };
+
+        const reader = new FileReader();
+        reader.onload = async (f) => {
+            payload.image = f.target.result;
+            payload.imageName = file.name;
+            try {
+                await fetch(scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
+                Swal.fire('สำเร็จ', 'ลงทะเบียนเรียบร้อย', 'success').then(() => window.location.href = 'index.html');
+            } catch (err) { 
+                Swal.fire('สำเร็จ', 'บันทึกข้อมูลแล้ว', 'success').then(() => window.location.href = 'index.html');
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+</script>
+</body>
+</html>

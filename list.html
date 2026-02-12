@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ทำเนียบรุ่น - BCLS&AED Gen.2</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8f9fa; }
+        .navbar { background-color: #007bff !important; height: 45px; min-height: 45px; padding: 0 20px; }
+        .navbar-brand { font-size: 14px; color: white !important; }
+        .card { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        
+        #listPage .card { min-height: 720px; display: flex; flex-direction: column; }
+        .table-responsive { flex-grow: 1; }
+        .hidden { display: none !important; }
+        
+        .profile-img-detail { 
+            width: 100%; aspect-ratio: 3/4; 
+            object-fit: cover; object-position: top;
+            background-color: #eee; border-radius: 15px; 
+            border: 6px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.15); 
+        }
+        
+        tr { cursor: pointer; transition: 0.2s; }
+        tr:hover { background-color: #f0f7ff !important; }
+        .info-label { color: #666; font-size: 0.85rem; display: block; margin-bottom: 1px; }
+        .info-value { font-weight: 600; font-size: 1.05rem; color: #333; word-break: break-word; }
+        
+        .pagination-container { padding: 20px 0; display: flex; justify-content: center; gap: 8px; }
+        .page-btn {
+            border: 1px solid #007bff; background: white; color: #007bff;
+            width: 35px; height: 35px; border-radius: 5px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+        .page-btn.active { background: #007bff; color: white; }
+        .edit-input { font-weight: 600; font-size: 1.05rem; color: #007bff; border: 1px solid #ddd; border-radius: 5px; padding: 2px 8px; width: 100%; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark shadow mb-4">
+        <div class="container-fluid text-start">
+            <a class="navbar-brand" href="index.html"><i class="fas fa-heartbeat me-2"></i>ทำเนียบรุ่น BCLS and AED Instructor Gen.2</a>
+        </div>
+    </nav>
+
+    <div class="container py-2 text-center">
+        <div id="listPage">
+            <div class="card p-4 shadow-sm">
+                <h3 class="fw-bold text-primary mb-4 text-start"><i class="fas fa-users me-2"></i>รายชื่อเพื่อนในรุ่น</h3>
+                <div class="input-group mb-4 shadow-sm">
+                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" id="searchInput" class="form-control border-start-0 ps-0" placeholder="ค้นหาชื่อ, ชื่อเล่น หรือลำดับ..." onkeyup="filterData()">
+                </div>
+                
+                <div class="table-responsive text-start">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" width="10%">ลำดับ</th>
+                                <th>ชื่อ-นามสกุล</th>
+                                <th width="20%">ชื่อเล่น</th>
+                                <th class="text-center" width="15%">ดูข้อมูล</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+                <div id="pagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <div id="detailPage" class="hidden text-start">
+            <button class="btn btn-link text-decoration-none fw-bold mb-3" onclick="showPage('list')">
+                <i class="fas fa-chevron-left me-1"></i> กลับไปหน้ารายชื่อ
+            </button>
+            <div class="card overflow-hidden shadow-lg">
+                <div class="row g-0">
+                    <div class="col-md-5 bg-primary p-4 d-flex flex-column align-items-center justify-content-center text-center">
+                        <div class="profile-container" style="width: 100%; max-width: 300px;">
+                            <img id="detailImage" src="" class="profile-img-detail mb-3" onerror="this.src='https://via.placeholder.com/300x400?text=No+Photo'">
+                            <div id="editImageSection" class="hidden mb-3">
+                                <input type="file" id="fileInput" class="form-control form-control-sm" accept="image/*">
+                            </div>
+                        </div>
+                        <h2 id="detailName" class="fw-bold text-white mb-1"></h2>
+                        <span id="detailNick" class="badge bg-white text-primary fs-6 px-3 rounded-pill"></span>
+                    </div>
+                    <div class="col-md-7 p-4 p-md-5 bg-white">
+                        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+                            <h4 class="text-primary fw-bold m-0">ข้อมูลส่วนตัว</h4>
+                            <div>
+                                <button id="btnEdit" class="btn btn-outline-warning btn-sm fw-bold" onclick="enableEdit()"><i class="fas fa-edit me-1"></i>แก้ไขข้อมูล</button>
+                                <button id="btnSave" class="btn btn-success btn-sm fw-bold hidden" onclick="saveData()"><i class="fas fa-save me-1"></i>ยืนยันบันทึก</button>
+                                <button id="btnCancel" class="btn btn-light btn-sm fw-bold hidden ms-1" onclick="cancelEdit()">ยกเลิก</button>
+                            </div>
+                        </div>
+                        <form id="editForm">
+                            <div class="row g-4 text-start">
+                                <div class="col-6"><span class="info-label">ลำดับที่</span><span id="textSeq" class="info-value text-primary"></span><input type="hidden" id="inputSeq"></div>
+                                <div class="col-6"><span class="info-label">เบอร์โทร</span><span id="textPhone" class="info-value info-text"></span><input type="text" id="inputPhone" class="edit-input hidden"></div>
+                                <div class="col-md-12"><span class="info-label">ชื่อ นามสกุล</span><span id="textName" class="info-value info-text"></span><input type="text" id="inputName" class="edit-input hidden"></div>
+                                <div class="col-md-6"><span class="info-label">ชื่อเล่น</span><span id="textNick" class="info-value info-text"></span><input type="text" id="inputNick" class="edit-input hidden"></div>
+                                <div class="col-md-6"><span class="info-label">ID Line</span><span id="textLine" class="info-value text-success info-text"></span><input type="text" id="inputLine" class="edit-input hidden text-success"></div>
+                                <div class="col-md-6"><span class="info-label">อีเมล</span><span id="textEmail" class="info-value info-text"></span><input type="text" id="inputEmail" class="edit-input hidden"></div>
+                                <div class="col-md-6"><span class="info-label">Facebook</span><span id="textFb" class="info-value text-primary info-text"></span><input type="text" id="inputFb" class="edit-input hidden text-primary"></div>
+                                <div class="col-md-6"><span class="info-label">IG</span><span id="textIg" class="info-value info-text" style="color: #e1306c;"></span><input type="text" id="inputIg" class="edit-input hidden" style="color: #e1306c;"></div>
+                                <div class="col-12"><span class="info-label">ที่อยู่</span><div id="textAddress" class="p-3 bg-light rounded border mt-1 fs-6 info-text"></div><textarea id="inputAddress" class="edit-input hidden mt-1" rows="3"></textarea></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="position-fixed top-0 start-0 w-100 h-100 bg-white opacity-75 d-flex justify-content-center align-items-center hidden" style="z-index: 9999;">
+        <div class="spinner-border text-primary"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbzGh8o4czf6wtKe0mx_MLCmv3KwcnerdKqaz0m5GkRY7ySOMFWGcDXjXDMNmnP6Copk/exec';
+        let members = [];
+        let currentPage = 1;
+        const rowsPerPage = 10;
+        let currentMember = null;
+
+        async function fetchData() {
+            showLoading(true);
+            try {
+                const res = await fetch(`${scriptUrl}?action=getMembers&t=${new Date().getTime()}`);
+                const data = await res.json();
+                // Sync คีย์ตัวแปรให้ตรงกับหัวตาราง Code.gs (lowercase)
+                members = data.sort((a, b) => parseInt(a.sequence) - parseInt(b.sequence));
+                renderTable();
+            } catch (e) { Swal.fire('Error', 'โหลดข้อมูลไม่สำเร็จ', 'error'); }
+            showLoading(false);
+        }
+
+        function renderTable() {
+            const val = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = members.filter(m => 
+                (m.sequence || '').toString().includes(val) || 
+                (m.fullName || '').toLowerCase().includes(val) || 
+                (m.nickname || '').toLowerCase().includes(val)
+            );
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const paginatedData = filtered.slice(startIndex, startIndex + rowsPerPage);
+            const body = document.getElementById('tableBody');
+            body.innerHTML = paginatedData.map(m => `
+                <tr onclick="viewDetail('${m.sequence}')">
+                    <td class="text-center fw-bold text-primary">${m.sequence || ''}</td>
+                    <td>${m.fullName || ''}</td>
+                    <td>${m.nickname || '-'}</td>
+                    <td class="text-center text-primary"><i class="fas fa-eye"></i></td>
+                </tr>
+            `).join('');
+            renderPagination(filtered.length);
+        }
+
+        function renderPagination(totalRows) {
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+            const container = document.getElementById('pagination');
+            container.innerHTML = '';
+            if (totalPages <= 1) return;
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.innerText = i; btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                btn.onclick = () => { currentPage = i; renderTable(); window.scrollTo(0,0); };
+                container.appendChild(btn);
+            }
+        }
+
+        function filterData() { currentPage = 1; renderTable(); }
+
+        function viewDetail(seq) {
+            currentMember = members.find(m => m.sequence.toString() === seq.toString());
+            if (!currentMember) return;
+            document.getElementById('detailImage').src = currentMember.imageUrl || '';
+            document.getElementById('detailName').innerText = currentMember.fullName || '';
+            document.getElementById('detailNick').innerText = currentMember.nickname || '-';
+            document.getElementById('textSeq').innerText = currentMember.sequence || '';
+            document.getElementById('textName').innerText = currentMember.fullName || '';
+            document.getElementById('textNick').innerText = currentMember.nickname || '';
+            document.getElementById('textPhone').innerText = currentMember.phone || '';
+            document.getElementById('textEmail').innerText = currentMember.email || '';
+            document.getElementById('textLine').innerText = currentMember.lineId || '';
+            document.getElementById('textFb').innerText = currentMember.facebook || '';
+            document.getElementById('textIg').innerText = currentMember.instagram || '';
+            document.getElementById('textAddress').innerText = currentMember.address || '';
+            cancelEdit(); showPage('detail');
+        }
+
+        function showPage(p) {
+            document.getElementById('listPage').classList.toggle('hidden', p !== 'list');
+            document.getElementById('detailPage').classList.toggle('hidden', p !== 'detail');
+        }
+
+        function enableEdit() {
+            document.querySelectorAll('.info-text').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.edit-input').forEach(el => el.classList.remove('hidden'));
+            document.getElementById('inputSeq').value = currentMember.sequence;
+            document.getElementById('inputName').value = currentMember.fullName || '';
+            document.getElementById('inputNick').value = currentMember.nickname || '';
+            document.getElementById('inputPhone').value = currentMember.phone || '';
+            document.getElementById('inputEmail').value = currentMember.email || '';
+            document.getElementById('inputLine').value = currentMember.lineId || '';
+            document.getElementById('inputFb').value = currentMember.facebook || '';
+            document.getElementById('inputIg').value = currentMember.instagram || '';
+            document.getElementById('inputAddress').value = currentMember.address || '';
+            document.getElementById('editImageSection').classList.remove('hidden');
+            document.getElementById('btnEdit').classList.add('hidden');
+            document.getElementById('btnSave').classList.remove('hidden');
+            document.getElementById('btnCancel').classList.remove('hidden');
+        }
+
+        function cancelEdit() {
+            document.querySelectorAll('.info-text').forEach(el => el.classList.remove('hidden'));
+            document.querySelectorAll('.edit-input').forEach(el => el.classList.add('hidden'));
+            document.getElementById('editImageSection').classList.add('hidden');
+            document.getElementById('btnEdit').classList.remove('hidden');
+            document.getElementById('btnSave').classList.add('hidden');
+            document.getElementById('btnCancel').classList.add('hidden');
+        }
+
+        async function saveData() {
+            const confirm = await Swal.fire({
+                title: 'ยืนยันการแก้ไขข้อมูล?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยัน',
+                cancelButtonText: 'ยกเลิก'
+            });
+            if (!confirm.isConfirmed) return;
+
+            showLoading(true);
+            const file = document.getElementById('fileInput').files[0];
+            const payload = {
+                action: 'edit',
+                sequence: document.getElementById('inputSeq').value,
+                fullName: document.getElementById('inputName').value,
+                nickname: document.getElementById('inputNick').value,
+                phone: document.getElementById('inputPhone').value,
+                email: document.getElementById('inputEmail').value,
+                lineId: document.getElementById('inputLine').value,
+                facebook: document.getElementById('inputFb').value,
+                instagram: document.getElementById('inputIg').value,
+                address: document.getElementById('inputAddress').value
+            };
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    payload.image = e.target.result;
+                    payload.imageName = file.name;
+                    await sendToServer(payload);
+                };
+                reader.readAsDataURL(file);
+            } else { await sendToServer(payload); }
+        }
+
+        async function sendToServer(p) {
+            try {
+                const res = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify(p) });
+                const result = await res.json();
+                if (result.status === 'success') { 
+                    Swal.fire({ title: 'สำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false })
+                    .then(() => location.reload()); 
+                } 
+                else { showLoading(false); Swal.fire('Error', result.message, 'error'); }
+            } catch (e) { location.reload(); }
+        }
+
+        function showLoading(s) { document.getElementById('loading').classList.toggle('hidden', !s); }
+        document.addEventListener('DOMContentLoaded', fetchData);
+    </script>
+</body>
+</html>

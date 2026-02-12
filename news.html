@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ข่าวสาร & ประกาศ - BCLS & AED Gen.2</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background: #f4f7f6; color: #333; }
+        .navbar { background: #007bff; padding: 10px 0; }
+        
+        /* Highlights Section */
+        .highlight-card { border: none; border-radius: 20px; overflow: hidden; transition: 0.3s; background: white; box-shadow: 0 10px 20px rgba(0,0,0,0.05); height: 100%; }
+        .highlight-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+        .highlight-img { height: 200px; width: 100%; object-fit: cover; background: #eee; }
+        .badge-date { background: #fff1f2; color: #dc3545; padding: 5px 15px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; }
+        
+        /* Table Section */
+        .table-card { border-radius: 20px; border: none; background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        
+        /* Modal Style - อัปเดตให้รูปเต็มใบ */
+        .modal-content { border-radius: 25px; border: none; }
+        #mImg { 
+            width: 100%; 
+            max-height: 500px; 
+            object-fit: contain; /* แสดงรูปเต็มสัดส่วนไม่โดนตัด */
+            background-color: #f8f9fa; 
+            border-radius: 15px;
+        }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark shadow-sm mb-4">
+    <div class="container text-start">
+        <a class="navbar-brand fw-bold" href="index.html"><i class="fas fa-bullhorn me-2 text-warning"></i>BCLS NEWS</a>
+        <a href="index.html" class="btn btn-outline-light btn-sm rounded-pill px-3">กลับหน้าหลัก</a>
+    </div>
+</nav>
+
+<div class="container pb-5 text-start">
+    <h4 class="fw-bold text-primary mb-4 border-start border-4 border-primary ps-3">ข่าวสารล่าสุด (Highlights)</h4>
+    <div class="row g-4" id="highlightBox">
+        <div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>
+    </div>
+
+    <div class="table-card p-4 mt-5 shadow-sm">
+        <h4 class="fw-bold mb-4 text-secondary"><i class="fas fa-history me-2"></i>ประกาศทั้งหมด</h4>
+        <div class="table-responsive">
+            <table id="newsTable" class="table table-hover w-100 align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">วันที่</th>
+                        <th>หัวข้อข่าว</th>
+                        <th style="width: 15%;" class="text-center">ดูข่าว</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="newsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header border-0 pb-0 text-end">
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 pt-0">
+                <h3 class="fw-bold text-primary mb-2 text-start" id="mTitle"></h3>
+                <span class="badge-date mb-3 d-inline-block" id="mDate"></span>
+                <div class="text-center mb-4">
+                    <img id="mImg" src="" class="img-fluid shadow-sm" style="display:none;">
+                </div>
+                <div id="mDetail" class="text-start" style="white-space: pre-wrap; line-height: 1.8; color: #444; font-size: 1.05rem;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbxOJGohq26z4zmHuxEELdIrndEqnK_qHBKil0B_yhmQGZNG_tfGl-uEIPFdLcv339ui/exec';
+
+    // ฟังก์ชันจัดการวันที่ พ.ศ.
+    const fmtThaiDate = d => {
+        if(!d) return '-';
+        const date = new Date(d);
+        if(isNaN(date.getTime())) return d;
+        let year = date.getFullYear();
+        if (year < 2400) year += 543;
+        const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+        return `${date.getDate()} ${months[date.getMonth()]} ${year}`;
+    };
+
+    window.onload = async () => {
+        try {
+            const res = await fetch(`${scriptUrl}?action=getNews&t=${Date.now()}`);
+            const data = await res.json();
+            renderNews(data);
+        } catch (e) { 
+            console.error(e);
+            document.getElementById('highlightBox').innerHTML = '<p class="text-center text-muted">ไม่สามารถโหลดข้อมูลได้</p>';
+        }
+    };
+
+    function renderNews(data) {
+        const hb = document.getElementById('highlightBox');
+        const tb = document.getElementById('tableBody');
+        hb.innerHTML = ''; tb.innerHTML = '';
+        
+        // เรียงจากใหม่ไปเก่า
+        const sortedData = [...data].reverse();
+
+        sortedData.forEach((n, i) => {
+            const dateStr = fmtThaiDate(n.date || n.วันที่);
+            const img = n.imageurl || n.imageURL || n.ImageUrl || "";
+
+            // 3 อันแรกเป็น Highlights
+            if(i < 3) {
+                hb.innerHTML += `
+                <div class="col-md-4">
+                    <div class="card highlight-card shadow-sm">
+                        <img src="${img || 'https://via.placeholder.com/400x250?text=News'}" class="highlight-img">
+                        <div class="card-body text-start">
+                            <span class="badge-date mb-2 d-inline-block">${dateStr}</span>
+                            <h6 class="fw-bold text-dark mb-3 line-clamp-2">${n.title || 'ไม่มีหัวข้อ'}</h6>
+                            <button class="btn btn-primary btn-sm w-100 rounded-pill fw-bold shadow-sm" onclick='showNews(${JSON.stringify(n)})'>อ่านต่อ..</button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            // ทั้งหมดลงตาราง
+            tb.innerHTML += `
+            <tr>
+                <td class="small fw-bold">${dateStr}</td>
+                <td class="fw-bold text-dark text-start">${n.title || '-'}</td>
+                <td class="text-center">
+                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick='showNews(${JSON.stringify(n)})'>อ่านต่อ</button>
+                </td>
+            </tr>`;
+        });
+
+        // เปิดใช้งานตารางค้นหา
+        $('#newsTable').DataTable({
+            order: [[0, 'desc']],
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json' },
+            pageLength: 10
+        });
+    }
+
+    function showNews(n) {
+        document.getElementById('mTitle').innerText = n.title || 'ประกาศ';
+        document.getElementById('mDate').innerText = 'ประกาศเมื่อ: ' + fmtThaiDate(n.date || n.วันที่);
+        document.getElementById('mDetail').innerText = n.detail || '';
+        
+        const img = document.getElementById('mImg');
+        const url = n.imageurl || n.imageURL || n.ImageUrl || "";
+        
+        if(url) { 
+            img.src = url; 
+            img.style.display = 'inline-block'; 
+        } else { 
+            img.style.display = 'none'; 
+        }
+        
+        new bootstrap.Modal(document.getElementById('newsModal')).show();
+    }
+</script>
+</body>
+</html>

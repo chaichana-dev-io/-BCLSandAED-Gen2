@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - BCLS & AED Gen.2</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background: #f8f9fa; }
+        #loginPage { position: fixed; inset: 0; background: #212529; z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        #loadingOverlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 10000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .navbar-brand { font-size: 1.1rem; }
+        .img-preview-box { width: 100%; height: 200px; border-radius: 12px; border: 2px dashed #ddd; object-fit: cover; background: #fff; cursor: pointer; }
+        .list-group-item.active { background-color: #007bff; border-color: #007bff; }
+        .btn-pill { border-radius: 50px; }
+    </style>
+</head>
+<body>
+
+<div id="loginPage">
+    <div class="card p-4 text-center shadow-lg" style="width: 350px;">
+        <div class="mb-3 text-primary"><i class="fas fa-user-shield fa-3x"></i></div>
+        <h4 class="fw-bold mb-3">Admin Login</h4>
+        <input type="password" id="adminPass" class="form-control mb-3 text-center" placeholder="รหัสผ่าน" onkeydown="if(event.key === 'Enter') checkAuth()">
+        <button class="btn btn-primary w-100 fw-bold mb-2 btn-pill" onclick="checkAuth()">เข้าสู่ระบบ (Enter)</button>
+        <a href="index.html" class="text-muted small text-decoration-none">กลับหน้าหลัก</a>
+    </div>
+</div>
+
+<div id="adminArea" style="display: none;">
+    <div id="loadingOverlay">
+        <div class="spinner-border text-primary mb-2"></div>
+        <h6 class="fw-bold" id="loadText">กำลังดำเนินการ...</h6>
+    </div>
+
+    <nav class="navbar navbar-dark bg-dark shadow-sm mb-4 sticky-top">
+        <div class="container text-start">
+            <div class="d-flex align-items-center">
+                <a href="index.html" class="btn btn-outline-light btn-sm me-3 btn-pill px-3"><i class="fas fa-home"></i> หน้าหลัก</a>
+                <span class="navbar-brand fw-bold mb-0">Admin Dashboard System</span>
+            </div>
+            <button class="btn btn-sm btn-danger fw-bold btn-pill px-3" onclick="location.reload()">ออกจากระบบ</button>
+        </div>
+    </nav>
+
+    <div class="container pb-5">
+        <div class="row g-4 text-start">
+            <div class="col-md-3">
+                <div class="list-group shadow-sm sticky-top" style="top: 80px;">
+                    <button class="list-group-item list-group-item-action active py-3" data-bs-toggle="pill" data-bs-target="#workTab" onclick="loadAdminWorks()"><i class="fas fa-award me-2"></i>จัดการผลงานการสอน</button>
+                    <button class="list-group-item list-group-item-action py-3" data-bs-toggle="pill" data-bs-target="#newsTab"><i class="fas fa-bullhorn me-2"></i>ประกาศข่าวสาร</button>
+                    <button class="list-group-item list-group-item-action py-3" data-bs-toggle="pill" data-bs-target="#configTab"><i class="fas fa-sliders-h me-2"></i>ตั้งค่าการแสดงผล</button>
+                </div>
+            </div>
+
+            <div class="col-md-9 tab-content">
+                
+                <div class="tab-pane fade show active" id="workTab">
+                    <div class="card p-4 mb-4 border-start border-5 border-success">
+                        <h5 class="fw-bold mb-4 text-success" id="workFormTitle">บันทึกผลงาน (Auto-Folder)</h5>
+                        <form id="workForm">
+                            <input type="hidden" id="editWorkId">
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="small fw-bold">ชื่อโครงการ</label><input type="text" id="workTitle" class="form-control" required></div>
+                                <div class="col-md-6"><label class="small fw-bold">สถานที่</label><input type="text" id="workLoc" class="form-control" required></div>
+                                <div class="col-md-6"><label class="small fw-bold">วันที่ออกสอน</label><input type="date" id="workDate" class="form-control" required></div>
+                                <div class="col-md-6"><label class="small fw-bold">จำนวนผู้เรียน (คน)</label><input type="number" id="workCount" class="form-control" required></div>
+                                <div class="col-12"><label class="small fw-bold">รายชื่อทีมวิทยากร</label><textarea id="workStaff" class="form-control" rows="2"></textarea></div>
+                                
+                                <div class="col-md-6 text-center">
+                                    <label class="small text-primary fw-bold">รูปหน้าปก (1 รูป)</label>
+                                    <img id="prevCover" src="https://via.placeholder.com/400x200?text=เลือกรูปหน้าปก" class="img-preview-box mb-2" onclick="document.getElementById('workCover').click()">
+                                    <input type="file" id="workCover" class="form-control form-control-sm d-none" accept="image/*" onchange="previewFile(this, 'prevCover')">
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-pill mt-1" onclick="document.getElementById('workCover').click()">เลือกรูป</button>
+                                </div>
+                                <div class="col-md-6 text-center">
+                                    <label class="small text-success fw-bold">รูป Gallery (สูงสุด 5 รูป)</label>
+                                    <div class="img-preview-box mb-2 d-flex align-items-center justify-content-center bg-light border" onclick="document.getElementById('workGallery').click()">
+                                        <div class="text-center">
+                                            <i class="fas fa-images fa-3x text-muted opacity-25"></i>
+                                            <p class="small text-muted mb-0">คลิกเพื่อเลือกไฟล์</p>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="workGallery" class="form-control d-none" accept="image/*" multiple onchange="alert('เลือกแล้ว ' + this.files.length + ' ไฟล์')">
+                                </div>
+                                <div class="col-12"><label class="small text-muted fw-bold">ลิงก์วิดีโอ (YouTube/Drive)</label><input type="text" id="workVdoUrl" class="form-control" placeholder="https://..."></div>
+                            </div>
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-success w-100 fw-bold py-2 btn-pill shadow-sm">บันทึกผลงานและสร้างโฟลเดอร์</button>
+                                <button type="button" id="btnCancel" class="btn btn-secondary w-100 mt-2 btn-pill d-none" onclick="resetForm()">ยกเลิกการแก้ไข</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card p-3 shadow-sm">
+                        <table class="table table-sm table-hover align-middle"><thead class="table-dark"><tr><th>วันที่</th><th>โครงการ</th><th class="text-center">จัดการ</th></tr></thead><tbody id="adminWorkTable"></tbody></table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="newsTab">
+                    <div class="card p-4 border-start border-5 border-primary">
+                        <h5 class="fw-bold mb-4 text-primary">ลงประกาศข่าวประชาสัมพันธ์ (Highlights)</h5>
+                        <form id="newsForm">
+                            <div class="mb-3"><label class="small fw-bold">หัวข้อข่าว</label><input type="text" id="newsTitle" class="form-control" required></div>
+                            <div class="mb-3"><label class="small fw-bold">รายละเอียดข่าว</label><textarea id="newsDetail" class="form-control" rows="4" required></textarea></div>
+                            <div class="mb-3 text-center">
+                                <label class="small fw-bold d-block text-start mb-2 text-primary">รูปหน้าปกข่าว (1 รูป)</label>
+                                <img id="newsPrev" src="https://via.placeholder.com/600x300?text=เลือกรูปภาพข่าว" class="img-preview-box mb-2" style="height: 250px; width: 100%;" onclick="document.getElementById('newsImg').click()">
+                                <input type="file" id="newsImg" class="form-control d-none" accept="image/*" onchange="previewFile(this, 'newsPrev')">
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-pill mt-1" onclick="document.getElementById('newsImg').click()">เลือกรูปภาพหน้าปกข่าว</button>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 btn-pill shadow">ยืนยันการประกาศข่าว</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="configTab">
+                    <div class="card p-4 text-center">
+                        <h5 class="fw-bold mb-4 border-bottom pb-2">สลับโหมดหน้าแรก</h5>
+                        <div class="btn-group w-100 shadow-sm" role="group">
+                            <input type="radio" class="btn-check" name="mode" id="mVdo" onchange="updateConfig('video')">
+                            <label class="btn btn-outline-primary py-3 fw-bold" for="mVdo"><i class="fas fa-video d-block mb-1"></i>โหมดวิดีโอ</label>
+                            <input type="radio" class="btn-check" name="mode" id="mNews" onchange="updateConfig('news')">
+                            <label class="btn btn-outline-primary py-3 fw-bold" for="mNews"><i class="fas fa-newspaper d-block mb-1"></i>โหมดข่าวสาร</label>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbxOJGohq26z4zmHuxEELdIrndEqnK_qHBKil0B_yhmQGZNG_tfGl-uEIPFdLcv339ui/exec';
+    
+    function checkAuth() {
+        if(document.getElementById('adminPass').value === "Abc@1234") {
+            document.getElementById('loginPage').style.display='none';
+            document.getElementById('adminArea').style.display='block';
+            loadAdminWorks();
+        } else { Swal.fire('Error','รหัสผ่านไม่ถูกต้อง','error'); }
+    }
+
+    const toBase64 = f => new Promise(res => {
+        const rd = new FileReader(); rd.readAsDataURL(f);
+        rd.onload = e => res(e.target.result);
+    });
+
+    function previewFile(input, imgId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => document.getElementById(imgId).src = e.target.result;
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // --- ระบบข่าวสาร (News) ---
+    document.getElementById('newsForm').onsubmit = async (e) => {
+        e.preventDefault();
+        showLoading(true, "กำลังอัปโหลดรูปและบันทึกข่าว...");
+        const payload = {
+            action: 'addNews',
+            title: document.getElementById('newsTitle').value,
+            detail: document.getElementById('newsDetail').value,
+            imageName: "News_" + Date.now()
+        };
+        const file = document.getElementById('newsImg').files[0];
+        if(file) payload.image = await toBase64(file);
+
+        try {
+            await fetch(scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            Swal.fire('สำเร็จ', 'ประกาศข่าวสารแล้ว', 'success');
+            document.getElementById('newsForm').reset();
+            document.getElementById('newsPrev').src = "https://via.placeholder.com/600x300?text=เลือกรูปภาพข่าว";
+        } catch(err) { Swal.fire('Error', 'ผิดพลาด', 'error'); }
+        showLoading(false);
+    };
+
+    // --- ระบบผลงาน (Work) ---
+    async function loadAdminWorks() {
+        const tbody = document.getElementById('adminWorkTable');
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center">กำลังโหลด...</td></tr>';
+        const res = await fetch(`${scriptUrl}?action=getWorks&t=${Date.now()}`);
+        const data = await res.json();
+        tbody.innerHTML = '';
+        data.reverse().forEach(w => {
+            tbody.innerHTML += `<tr><td class="small">${w.date ? w.date.split('T')[0] : '-'}</td><td class="small fw-bold">${w.title}</td><td class="text-center"><button class="btn btn-sm btn-outline-primary btn-pill" onclick='editWork(${JSON.stringify(w)})'><i class="fas fa-edit"></i></button></td></tr>`;
+        });
+    }
+
+    document.getElementById('workForm').onsubmit = async (e) => {
+        e.preventDefault();
+        showLoading(true, "กำลังประมวลผลรูปและสร้างโฟลเดอร์...");
+        const payload = {
+            action: document.getElementById('editWorkId').value ? 'editWork' : 'addWork',
+            id: document.getElementById('editWorkId').value,
+            title: document.getElementById('workTitle').value,
+            location: document.getElementById('workLoc').value,
+            date: document.getElementById('workDate').value,
+            studentcount: document.getElementById('workCount').value,
+            instructors: document.getElementById('workStaff').value,
+            videourl: document.getElementById('workVdoUrl').value
+        };
+        const cover = document.getElementById('workCover').files[0];
+        if(cover) payload.image = await toBase64(cover);
+        const gal = document.getElementById('workGallery').files;
+        if(gal.length > 0) {
+            payload.gallery = [];
+            for(let i=0; i<Math.min(gal.length, 5); i++) payload.gallery.push({ blob: await toBase64(gal[i]) });
+        }
+        try {
+            await fetch(scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            Swal.fire('สำเร็จ', 'บันทึกเรียบร้อย', 'success');
+            resetForm(); setTimeout(loadAdminWorks, 3000);
+        } catch(err) { Swal.fire('Error', 'ไม่สามารถบันทึกได้', 'error'); }
+        showLoading(false);
+    };
+
+    function editWork(w) {
+        document.getElementById('editWorkId').value = w.id;
+        document.getElementById('workTitle').value = w.title;
+        document.getElementById('workLoc').value = w.location;
+        document.getElementById('workDate').value = w.date ? w.date.split('T')[0] : '';
+        document.getElementById('workCount').value = w.studentcount || w.studentCount;
+        document.getElementById('workStaff').value = w.instructors;
+        document.getElementById('workVdoUrl').value = w.videourl || '';
+        document.getElementById('prevCover').src = w.imageurl || 'https://via.placeholder.com/400x200';
+        document.getElementById('btnCancel').classList.remove('d-none');
+        document.getElementById('workFormTitle').innerText = "แก้ไขผลงาน: " + w.title;
+        window.scrollTo(0,0);
+    }
+
+    function resetForm() {
+        document.getElementById('workForm').reset();
+        document.getElementById('editWorkId').value = '';
+        document.getElementById('prevCover').src = 'https://via.placeholder.com/400x200?text=เลือกรูปหน้าปก';
+        document.getElementById('btnCancel').classList.add('d-none');
+        document.getElementById('workFormTitle').innerText = "บันทึกผลงาน (ระบบสร้างโฟลเดอร์อัตโนมัติ)";
+    }
+
+    function showLoading(s, t) {
+        document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none';
+        document.getElementById('loadText').innerText = t;
+    }
+
+    async function updateConfig(v) {
+        showLoading(true, "กำลังอัปเดตโหมดการแสดงผล...");
+        await fetch(scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action:'updateConfig', display_mode:v})});
+        showLoading(false);
+        Swal.fire('สำเร็จ', 'เปลี่ยนโหมดหน้าแรกเรียบร้อย', 'success');
+    }
+</script>
+</body>
+</html>
