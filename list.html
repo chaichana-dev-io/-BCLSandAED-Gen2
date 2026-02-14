@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ทำเนียบรุ่น - BCLS&AED Gen.2</title>
+    <title>ทำเนียบรุ่น - BCLS & AED Gen.2</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -36,7 +36,8 @@
             display: flex; align-items: center; justify-content: center; font-weight: bold;
         }
         .page-btn.active { background: #007bff; color: white; }
-        .edit-input { font-weight: 600; font-size: 1.05rem; color: #007bff; border: 1px solid #ddd; border-radius: 5px; padding: 2px 8px; width: 100%; }
+        .edit-input { font-weight: 600; font-size: 1.05rem; color: #007bff; border: 1px solid #ddd; border-radius: 10px; padding: 8px 12px; width: 100%; transition: 0.3s; }
+        .edit-input:focus { border-color: #007bff; outline: none; box-shadow: 0 0 5px rgba(0,123,255,0.2); }
     </style>
 </head>
 <body>
@@ -82,6 +83,7 @@
                         <div class="profile-container" style="width: 100%; max-width: 300px;">
                             <img id="detailImage" src="" class="profile-img-detail mb-3" onerror="this.src='https://via.placeholder.com/300x400?text=No+Photo'">
                             <div id="editImageSection" class="hidden mb-3">
+                                <label class="text-white small mb-2 d-block">เปลี่ยนรูปโปรไฟล์</label>
                                 <input type="file" id="fileInput" class="form-control form-control-sm" accept="image/*">
                             </div>
                         </div>
@@ -116,30 +118,36 @@
         </div>
     </div>
 
-    <div id="loading" class="position-fixed top-0 start-0 w-100 h-100 bg-white opacity-75 d-flex justify-content-center align-items-center hidden" style="z-index: 9999;">
-        <div class="spinner-border text-primary"></div>
+    <div id="loading" class="position-fixed top-0 start-0 w-100 h-100 bg-white opacity-75 d-flex flex-column justify-content-center align-items-center hidden" style="z-index: 9999;">
+        <div class="spinner-border text-primary mb-2"></div>
+        <h6 class="fw-bold text-primary">กำลังดำเนินการ...</h6>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        const scriptUrl = 'https://script.google.com/macros/s/AKfycbzGh8o4czf6wtKe0mx_MLCmv3KwcnerdKqaz0m5GkRY7ySOMFWGcDXjXDMNmnP6Copk/exec';
+        // ใช้ Script URL เดียวกับที่คุณส่งมา
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbxOJGohq26z4zmHuxEELdIrndEqnK_qHBKil0B_yhmQGZNG_tfGl-uEIPFdLcv339ui/exec';
         let members = [];
         let currentPage = 1;
         const rowsPerPage = 10;
         let currentMember = null;
 
+        // ดึงข้อมูลสมาชิก
         async function fetchData() {
             showLoading(true);
             try {
                 const res = await fetch(`${scriptUrl}?action=getMembers&t=${new Date().getTime()}`);
                 const data = await res.json();
-                // Sync คีย์ตัวแปรให้ตรงกับหัวตาราง Code.gs (lowercase)
+                // เรียงลำดับตามตัวเลข sequence
                 members = data.sort((a, b) => parseInt(a.sequence) - parseInt(b.sequence));
                 renderTable();
-            } catch (e) { Swal.fire('Error', 'โหลดข้อมูลไม่สำเร็จ', 'error'); }
+            } catch (e) { 
+                Swal.fire('Error', 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่', 'error'); 
+            }
             showLoading(false);
         }
 
+        // แสดงตารางพร้อมระบบค้นหา
         function renderTable() {
             const val = document.getElementById('searchInput').value.toLowerCase();
             const filtered = members.filter(m => 
@@ -147,17 +155,23 @@
                 (m.fullName || '').toLowerCase().includes(val) || 
                 (m.nickname || '').toLowerCase().includes(val)
             );
+            
             const startIndex = (currentPage - 1) * rowsPerPage;
             const paginatedData = filtered.slice(startIndex, startIndex + rowsPerPage);
             const body = document.getElementById('tableBody');
-            body.innerHTML = paginatedData.map(m => `
-                <tr onclick="viewDetail('${m.sequence}')">
-                    <td class="text-center fw-bold text-primary">${m.sequence || ''}</td>
-                    <td>${m.fullName || ''}</td>
-                    <td>${m.nickname || '-'}</td>
-                    <td class="text-center text-primary"><i class="fas fa-eye"></i></td>
-                </tr>
-            `).join('');
+            
+            if (paginatedData.length === 0) {
+                body.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">ไม่พบข้อมูลที่ค้นหา</td></tr>';
+            } else {
+                body.innerHTML = paginatedData.map(m => `
+                    <tr onclick="viewDetail('${m.sequence}')">
+                        <td class="text-center fw-bold text-primary">${m.sequence || ''}</td>
+                        <td>${m.fullName || ''}</td>
+                        <td>${m.nickname || '-'}</td>
+                        <td class="text-center text-primary"><i class="fas fa-eye"></i></td>
+                    </tr>
+                `).join('');
+            }
             renderPagination(filtered.length);
         }
 
@@ -169,19 +183,22 @@
             for (let i = 1; i <= totalPages; i++) {
                 const btn = document.createElement('button');
                 btn.innerText = i; btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
-                btn.onclick = () => { currentPage = i; renderTable(); window.scrollTo(0,0); };
+                btn.onclick = (e) => { e.stopPropagation(); currentPage = i; renderTable(); window.scrollTo(0,0); };
                 container.appendChild(btn);
             }
         }
 
         function filterData() { currentPage = 1; renderTable(); }
 
+        // ดูรายละเอียดสมาชิก
         function viewDetail(seq) {
             currentMember = members.find(m => m.sequence.toString() === seq.toString());
             if (!currentMember) return;
+            
             document.getElementById('detailImage').src = currentMember.imageUrl || '';
             document.getElementById('detailName').innerText = currentMember.fullName || '';
             document.getElementById('detailNick').innerText = currentMember.nickname || '-';
+            
             document.getElementById('textSeq').innerText = currentMember.sequence || '';
             document.getElementById('textName').innerText = currentMember.fullName || '';
             document.getElementById('textNick').innerText = currentMember.nickname || '';
@@ -191,17 +208,22 @@
             document.getElementById('textFb').innerText = currentMember.facebook || '';
             document.getElementById('textIg').innerText = currentMember.instagram || '';
             document.getElementById('textAddress').innerText = currentMember.address || '';
-            cancelEdit(); showPage('detail');
+            
+            cancelEdit(); 
+            showPage('detail');
         }
 
         function showPage(p) {
             document.getElementById('listPage').classList.toggle('hidden', p !== 'list');
             document.getElementById('detailPage').classList.toggle('hidden', p !== 'detail');
+            if(p === 'list') window.scrollTo(0,0);
         }
 
+        // เปิดโหมดแก้ไข
         function enableEdit() {
             document.querySelectorAll('.info-text').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.edit-input').forEach(el => el.classList.remove('hidden'));
+            
             document.getElementById('inputSeq').value = currentMember.sequence;
             document.getElementById('inputName').value = currentMember.fullName || '';
             document.getElementById('inputNick').value = currentMember.nickname || '';
@@ -211,6 +233,7 @@
             document.getElementById('inputFb').value = currentMember.facebook || '';
             document.getElementById('inputIg').value = currentMember.instagram || '';
             document.getElementById('inputAddress').value = currentMember.address || '';
+            
             document.getElementById('editImageSection').classList.remove('hidden');
             document.getElementById('btnEdit').classList.add('hidden');
             document.getElementById('btnSave').classList.remove('hidden');
@@ -224,19 +247,25 @@
             document.getElementById('btnEdit').classList.remove('hidden');
             document.getElementById('btnSave').classList.add('hidden');
             document.getElementById('btnCancel').classList.add('hidden');
+            document.getElementById('fileInput').value = '';
         }
 
+        // บันทึกข้อมูล
         async function saveData() {
             const confirm = await Swal.fire({
                 title: 'ยืนยันการแก้ไขข้อมูล?',
+                text: "ข้อมูลเดิมจะถูกเขียนทับด้วยข้อมูลใหม่",
                 icon: 'question',
                 showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
                 confirmButtonText: 'ยืนยัน',
                 cancelButtonText: 'ยกเลิก'
             });
             if (!confirm.isConfirmed) return;
 
             showLoading(true);
+            
             const file = document.getElementById('fileInput').files[0];
             const payload = {
                 action: 'edit',
@@ -251,27 +280,46 @@
                 address: document.getElementById('inputAddress').value
             };
 
+            // กรณีเปลี่ยนรูปภาพ
             if (file) {
                 const reader = new FileReader();
                 reader.onload = async (e) => {
-                    payload.image = e.target.result;
-                    payload.imageName = file.name;
+                    payload.image = e.target.result; // Base64
+                    payload.imageName = "Edit_" + payload.sequence + "_" + Date.now();
                     await sendToServer(payload);
                 };
                 reader.readAsDataURL(file);
-            } else { await sendToServer(payload); }
+            } else { 
+                await sendToServer(payload); 
+            }
         }
 
+        // ส่งข้อมูลไปยัง Google Apps Script
         async function sendToServer(p) {
             try {
-                const res = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify(p) });
-                const result = await res.json();
-                if (result.status === 'success') { 
-                    Swal.fire({ title: 'สำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false })
-                    .then(() => location.reload()); 
-                } 
-                else { showLoading(false); Swal.fire('Error', result.message, 'error'); }
-            } catch (e) { location.reload(); }
+                const res = await fetch(scriptUrl, { 
+                    method: 'POST', 
+                    body: JSON.stringify(p),
+                    mode: 'no-cors' // สำคัญสำหรับการรันข้ามโดเมน
+                });
+                
+                // เนื่องจากใช้ no-cors เราจะไม่เห็น response body
+                // ให้ใช้การหน่วงเวลาสักครู่แล้วโหลดข้อมูลใหม่
+                Swal.fire({
+                    title: 'กำลังบันทึก...',
+                    text: 'กรุณารอสักครู่ ระบบกำลังอัปเดตฐานข้อมูล',
+                    icon: 'info',
+                    timer: 3000,
+                    showConfirmButton: false,
+                    allowOutsideClick: false
+                }).then(() => {
+                    location.reload();
+                });
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'ไม่สามารถส่งข้อมูลได้ กรุณาตรวจสอบอินเทอร์เน็ต', 'error');
+                showLoading(false);
+            }
         }
 
         function showLoading(s) { document.getElementById('loading').classList.toggle('hidden', !s); }
