@@ -3,24 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ทำเนียบรุ่น - BCLS & AED Gen.2</title>
+    <title>ทำเนียบรุ่น - BCLS&AED Gen.2</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f8f9fa; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8f9fa; color: #333; }
         .navbar { background-color: #007bff !important; height: 45px; min-height: 45px; padding: 0 20px; }
         .navbar-brand { font-size: 14px; color: white !important; }
         .card { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         
         #listPage .card { min-height: 720px; display: flex; flex-direction: column; }
-        .table-responsive { flex-grow: 1; }
         .hidden { display: none !important; }
         
         .profile-img-detail { 
             width: 100%; aspect-ratio: 3/4; 
-            object-fit: cover; object-position: top;
-            background-color: #eee; border-radius: 15px; 
+            object-fit: contain; background-color: #eee; border-radius: 15px; 
             border: 6px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.15); 
         }
         
@@ -36,14 +34,16 @@
             display: flex; align-items: center; justify-content: center; font-weight: bold;
         }
         .page-btn.active { background: #007bff; color: white; }
-        .edit-input { font-weight: 600; font-size: 1.05rem; color: #007bff; border: 1px solid #ddd; border-radius: 10px; padding: 8px 12px; width: 100%; transition: 0.3s; }
-        .edit-input:focus { border-color: #007bff; outline: none; box-shadow: 0 0 5px rgba(0,123,255,0.2); }
+        .edit-input { font-weight: 600; font-size: 1.05rem; color: #007bff; border: 1px solid #ddd; border-radius: 8px; padding: 8px 12px; width: 100%; }
+        
+        .profile-thumb { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
+
     <nav class="navbar navbar-dark shadow mb-4">
         <div class="container-fluid text-start">
-            <a class="navbar-brand" href="index.html"><i class="fas fa-heartbeat me-2"></i>ทำเนียบรุ่น BCLS and AED Instructor Gen.2</a>
+            <a class="navbar-brand" href="index.html"><i class="fas fa-heartbeat me-2"></i>BCLS and AED Instructor Gen.2</a>
         </div>
     </nav>
 
@@ -60,10 +60,10 @@
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th class="text-center" width="10%">ลำดับ</th>
+                                <th class="text-center" width="10%">รูป</th>
                                 <th>ชื่อ-นามสกุล</th>
                                 <th width="20%">ชื่อเล่น</th>
-                                <th class="text-center" width="15%">ดูข้อมูล</th>
+                                <th class="text-center" width="15%">ข้อมูล</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody"></tbody>
@@ -81,9 +81,9 @@
                 <div class="row g-0">
                     <div class="col-md-5 bg-primary p-4 d-flex flex-column align-items-center justify-content-center text-center">
                         <div class="profile-container" style="width: 100%; max-width: 300px;">
-                            <img id="detailImage" src="" class="profile-img-detail mb-3" onerror="this.src='https://via.placeholder.com/300x400?text=No+Photo'">
+                            <img id="detailImage" src="" class="profile-img-detail mb-3" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
                             <div id="editImageSection" class="hidden mb-3">
-                                <label class="text-white small mb-2 d-block">เปลี่ยนรูปโปรไฟล์</label>
+                                <label class="text-white small mb-1">เปลี่ยนรูปถ่าย</label>
                                 <input type="file" id="fileInput" class="form-control form-control-sm" accept="image/*">
                             </div>
                         </div>
@@ -94,8 +94,8 @@
                         <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
                             <h4 class="text-primary fw-bold m-0">ข้อมูลส่วนตัว</h4>
                             <div>
-                                <button id="btnEdit" class="btn btn-outline-warning btn-sm fw-bold" onclick="enableEdit()"><i class="fas fa-edit me-1"></i>แก้ไขข้อมูล</button>
-                                <button id="btnSave" class="btn btn-success btn-sm fw-bold hidden" onclick="saveData()"><i class="fas fa-save me-1"></i>ยืนยันบันทึก</button>
+                                <button id="btnEdit" class="btn btn-outline-warning btn-sm fw-bold" onclick="enableEdit()"><i class="fas fa-edit me-1"></i>แก้ไข</button>
+                                <button id="btnSave" class="btn btn-success btn-sm fw-bold hidden" onclick="saveData()"><i class="fas fa-save me-1"></i>บันทึก</button>
                                 <button id="btnCancel" class="btn btn-light btn-sm fw-bold hidden ms-1" onclick="cancelEdit()">ยกเลิก</button>
                             </div>
                         </div>
@@ -118,36 +118,40 @@
         </div>
     </div>
 
-    <div id="loading" class="position-fixed top-0 start-0 w-100 h-100 bg-white opacity-75 d-flex flex-column justify-content-center align-items-center hidden" style="z-index: 9999;">
+    <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-white opacity-75 d-flex flex-column justify-content-center align-items-center hidden" style="z-index: 10000;">
         <div class="spinner-border text-primary mb-2"></div>
-        <h6 class="fw-bold text-primary">กำลังดำเนินการ...</h6>
+        <h6 class="fw-bold">กำลังดำเนินการ...</h6>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // ใช้ Script URL เดียวกับที่คุณส่งมา
         const scriptUrl = 'https://script.google.com/macros/s/AKfycbxOJGohq26z4zmHuxEELdIrndEqnK_qHBKil0B_yhmQGZNG_tfGl-uEIPFdLcv339ui/exec';
         let members = [];
         let currentPage = 1;
-        const rowsPerPage = 10;
+        const rowsPerPage = 12;
         let currentMember = null;
 
-        // ดึงข้อมูลสมาชิก
-        async function fetchData() {
-            showLoading(true);
-            try {
-                const res = await fetch(`${scriptUrl}?action=getMembers&t=${new Date().getTime()}`);
-                const data = await res.json();
-                // เรียงลำดับตามตัวเลข sequence
-                members = data.sort((a, b) => parseInt(a.sequence) - parseInt(b.sequence));
-                renderTable();
-            } catch (e) { 
-                Swal.fire('Error', 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่', 'error'); 
+        // ฟังก์ชันแปลงลิงก์รูป Google Drive (สำคัญมาก!)
+        function getDirectImg(url) {
+            if(!url || url === "") return 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+            if(url.includes('id=')) {
+                let id = url.split('id=')[1].split('&')[0];
+                return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
             }
-            showLoading(false);
+            return url;
         }
 
-        // แสดงตารางพร้อมระบบค้นหา
+        async function fetchData() {
+            showLoad(true);
+            try {
+                const res = await fetch(`${scriptUrl}?action=getMembers&t=${Date.now()}`);
+                const data = await res.json();
+                members = data.sort((a, b) => parseInt(a.sequence) - parseInt(b.sequence));
+                renderTable();
+            } catch (e) { Swal.fire('Error', 'ไม่สามารถโหลดข้อมูลได้', 'error'); }
+            showLoad(false);
+        }
+
         function renderTable() {
             const val = document.getElementById('searchInput').value.toLowerCase();
             const filtered = members.filter(m => 
@@ -160,18 +164,16 @@
             const paginatedData = filtered.slice(startIndex, startIndex + rowsPerPage);
             const body = document.getElementById('tableBody');
             
-            if (paginatedData.length === 0) {
-                body.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">ไม่พบข้อมูลที่ค้นหา</td></tr>';
-            } else {
-                body.innerHTML = paginatedData.map(m => `
-                    <tr onclick="viewDetail('${m.sequence}')">
-                        <td class="text-center fw-bold text-primary">${m.sequence || ''}</td>
-                        <td>${m.fullName || ''}</td>
-                        <td>${m.nickname || '-'}</td>
-                        <td class="text-center text-primary"><i class="fas fa-eye"></i></td>
-                    </tr>
-                `).join('');
-            }
+            body.innerHTML = paginatedData.map(m => `
+                <tr onclick="viewDetail('${m.sequence}')">
+                    <td class="text-center">
+                        <img src="${getDirectImg(m.imageUrl || m.imageurl)}" class="profile-thumb" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                    </td>
+                    <td class="fw-bold">${m.fullName || ''}</td>
+                    <td>${m.nickname || '-'}</td>
+                    <td class="text-center text-primary"><i class="fas fa-search-plus"></i></td>
+                </tr>
+            `).join('');
             renderPagination(filtered.length);
         }
 
@@ -183,19 +185,19 @@
             for (let i = 1; i <= totalPages; i++) {
                 const btn = document.createElement('button');
                 btn.innerText = i; btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
-                btn.onclick = (e) => { e.stopPropagation(); currentPage = i; renderTable(); window.scrollTo(0,0); };
+                btn.onclick = () => { currentPage = i; renderTable(); window.scrollTo(0,0); };
                 container.appendChild(btn);
             }
         }
 
         function filterData() { currentPage = 1; renderTable(); }
 
-        // ดูรายละเอียดสมาชิก
         function viewDetail(seq) {
             currentMember = members.find(m => m.sequence.toString() === seq.toString());
             if (!currentMember) return;
             
-            document.getElementById('detailImage').src = currentMember.imageUrl || '';
+            const imgPath = getDirectImg(currentMember.imageUrl || currentMember.imageurl);
+            document.getElementById('detailImage').src = imgPath;
             document.getElementById('detailName').innerText = currentMember.fullName || '';
             document.getElementById('detailNick').innerText = currentMember.nickname || '-';
             
@@ -209,21 +211,17 @@
             document.getElementById('textIg').innerText = currentMember.instagram || '';
             document.getElementById('textAddress').innerText = currentMember.address || '';
             
-            cancelEdit(); 
-            showPage('detail');
+            cancelEdit(); showPage('detail');
         }
 
         function showPage(p) {
             document.getElementById('listPage').classList.toggle('hidden', p !== 'list');
             document.getElementById('detailPage').classList.toggle('hidden', p !== 'detail');
-            if(p === 'list') window.scrollTo(0,0);
         }
 
-        // เปิดโหมดแก้ไข
         function enableEdit() {
             document.querySelectorAll('.info-text').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.edit-input').forEach(el => el.classList.remove('hidden'));
-            
             document.getElementById('inputSeq').value = currentMember.sequence;
             document.getElementById('inputName').value = currentMember.fullName || '';
             document.getElementById('inputNick').value = currentMember.nickname || '';
@@ -233,7 +231,6 @@
             document.getElementById('inputFb').value = currentMember.facebook || '';
             document.getElementById('inputIg').value = currentMember.instagram || '';
             document.getElementById('inputAddress').value = currentMember.address || '';
-            
             document.getElementById('editImageSection').classList.remove('hidden');
             document.getElementById('btnEdit').classList.add('hidden');
             document.getElementById('btnSave').classList.remove('hidden');
@@ -247,25 +244,19 @@
             document.getElementById('btnEdit').classList.remove('hidden');
             document.getElementById('btnSave').classList.add('hidden');
             document.getElementById('btnCancel').classList.add('hidden');
-            document.getElementById('fileInput').value = '';
         }
 
-        // บันทึกข้อมูล
         async function saveData() {
             const confirm = await Swal.fire({
-                title: 'ยืนยันการแก้ไขข้อมูล?',
-                text: "ข้อมูลเดิมจะถูกเขียนทับด้วยข้อมูลใหม่",
+                title: 'บันทึกการเปลี่ยนแปลง?',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'ยืนยัน',
+                confirmButtonText: 'ตกลง',
                 cancelButtonText: 'ยกเลิก'
             });
             if (!confirm.isConfirmed) return;
 
-            showLoading(true);
-            
+            showLoad(true);
             const file = document.getElementById('fileInput').files[0];
             const payload = {
                 action: 'edit',
@@ -280,49 +271,25 @@
                 address: document.getElementById('inputAddress').value
             };
 
-            // กรณีเปลี่ยนรูปภาพ
             if (file) {
                 const reader = new FileReader();
                 reader.onload = async (e) => {
-                    payload.image = e.target.result; // Base64
-                    payload.imageName = "Edit_" + payload.sequence + "_" + Date.now();
+                    payload.image = e.target.result;
+                    payload.imageName = "Edit_" + payload.sequence;
                     await sendToServer(payload);
                 };
                 reader.readAsDataURL(file);
-            } else { 
-                await sendToServer(payload); 
-            }
+            } else { await sendToServer(payload); }
         }
 
-        // ส่งข้อมูลไปยัง Google Apps Script
         async function sendToServer(p) {
             try {
-                const res = await fetch(scriptUrl, { 
-                    method: 'POST', 
-                    body: JSON.stringify(p),
-                    mode: 'no-cors' // สำคัญสำหรับการรันข้ามโดเมน
-                });
-                
-                // เนื่องจากใช้ no-cors เราจะไม่เห็น response body
-                // ให้ใช้การหน่วงเวลาสักครู่แล้วโหลดข้อมูลใหม่
-                Swal.fire({
-                    title: 'กำลังบันทึก...',
-                    text: 'กรุณารอสักครู่ ระบบกำลังอัปเดตฐานข้อมูล',
-                    icon: 'info',
-                    timer: 3000,
-                    showConfirmButton: false,
-                    allowOutsideClick: false
-                }).then(() => {
-                    location.reload();
-                });
-            } catch (e) {
-                console.error(e);
-                Swal.fire('Error', 'ไม่สามารถส่งข้อมูลได้ กรุณาตรวจสอบอินเทอร์เน็ต', 'error');
-                showLoading(false);
-            }
+                await fetch(scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
+                Swal.fire('สำเร็จ', 'อัปเดตข้อมูลเรียบร้อย (กรุณารอสักครู่)', 'success').then(() => location.reload());
+            } catch (e) { location.reload(); }
         }
 
-        function showLoading(s) { document.getElementById('loading').classList.toggle('hidden', !s); }
+        function showLoad(s) { document.getElementById('loadingOverlay').classList.toggle('hidden', !s); }
         document.addEventListener('DOMContentLoaded', fetchData);
     </script>
 </body>
