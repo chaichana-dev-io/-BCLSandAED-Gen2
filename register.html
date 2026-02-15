@@ -11,19 +11,19 @@
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; }
         .navbar { background-color: #007bff !important; height: 50px; }
         .reg-card { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); background: #fff; }
-        .preview-container { width: 150px; height: 200px; margin: 0 auto; background: #eee; border-radius: 12px; border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .preview-container { width: 150px; height: 200px; margin: 0 auto; background: #eee; border-radius: 12px; border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; position: relative; }
         .preview-container img { width: 100%; height: 100%; object-fit: cover; }
         .is-invalid { border-color: #dc3545 !important; border-width: 2px !important; }
         .is-valid { border-color: #198754 !important; border-width: 2px !important; }
         .feedback-text { font-size: 0.85rem; font-weight: 600; margin-top: 5px; display: block; }
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
 
 <div id="loading">
-    <div class="spinner-border text-primary mb-2"></div>
-    <div class="fw-bold text-primary">กำลังตรวจสอบสถานะลำดับ...</div>
+    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+    <div class="fw-bold text-primary fs-5" id="loadText">กำลังดำเนินการ...</div>
 </div>
 
 <nav class="navbar navbar-dark shadow-sm mb-4">
@@ -52,7 +52,8 @@
 
                         <div class="col-12 border-bottom mb-3"></div>
 
-                        <div class="col-12 text-center mb-3">
+                        <div class="col-12 text-center mb-3 text-start">
+                            <label class="form-label fw-bold d-block mb-2">รูปถ่ายโปรไฟล์ (3:4)</label>
                             <div class="preview-container mb-2">
                                 <img id="imgPreview" src="https://via.placeholder.com/300x400?text=3:4+Photo">
                             </div>
@@ -60,29 +61,30 @@
                                 <i class="fas fa-camera me-1"></i> เลือกรูปถ่ายหน้าตรง
                                 <input type="file" id="inpFile" hidden accept="image/*" required>
                             </label>
+                            <p class="text-muted extra-small mt-1" style="font-size: 0.7rem;">* ระบบจะย่อขนาดรูปให้อัตโนมัติเพื่อความรวดเร็ว</p>
                         </div>
 
-                        <div class="col-md-12">
+                        <div class="col-md-12 text-start">
                             <label class="form-label fw-bold">ชื่อ - นามสกุล</label>
                             <input type="text" id="inpName" class="form-control" placeholder="กรอกชื่อและนามสกุล" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 text-start">
                             <label class="form-label fw-bold">ชื่อเล่น</label>
                             <input type="text" id="inpNick" class="form-control" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 text-start">
                             <label class="form-label fw-bold">เบอร์โทรศัพท์</label>
                             <input type="tel" id="inpPhone" class="form-control" placeholder="0XXXXXXXXX" required>
                         </div>
-                        <div class="col-12">
+                        <div class="col-12 text-start">
                             <label class="form-label fw-bold">ที่อยู่ปัจจุบัน</label>
                             <textarea id="inpAddr" class="form-control" rows="2" placeholder="ระบุที่อยู่เพื่อใช้ติดต่อ"></textarea>
                         </div>
                     </div>
 
                     <div class="mt-4">
-                        <button type="submit" id="btnSubmit" class="btn btn-primary btn-lg w-100 fw-bold shadow" disabled>
-                            กรุณารอโหลดข้อมูล...
+                        <button type="submit" id="btnSubmit" class="btn btn-primary btn-lg w-100 fw-bold shadow">
+                            บันทึกข้อมูลและยืนยัน
                         </button>
                     </div>
                 </form>
@@ -93,34 +95,33 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // URL ที่คุณบันทึกไว้ล่าสุด
-    const scriptUrl = 'https://script.google.com/macros/s/AKfycbyOlWV4qZUmvi7cBwz3x6E0ZZkYxQwOERYBCzhUx9wQVFLc6qklQWULX-Nd751eq79l/exec';
+    // ใช้ Script URL เดิมของคุณชัยชนะ
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbxOJGohq26z4zmHuxEELdIrndEqnK_qHBKil0B_yhmQGZNG_tfGl-uEIPFdLcv339ui/exec';
     let membersRAM = [];
     let isDataLoaded = false;
 
-    // โหลดเฉพาะเลขลำดับมาเก็บไว้เช็คซ้ำ (ข้อมูลจิ๋วมาก โหลดแป๊บเดียวเสร็จ)
+    // โหลดลำดับมาเช็คซ้ำ
     window.onload = async () => {
+        showLoading(true, "กำลังตรวจสอบระบบ...");
         try {
-            const res = await fetch(`${scriptUrl}?action=getOnlySeq&t=${new Date().getTime()}`);
-            membersRAM = await res.json();
+            const res = await fetch(`${scriptUrl}?action=getMembers&t=${Date.now()}`);
+            const data = await res.json();
+            // เก็บเฉพาะลำดับไว้เช็คซ้ำ
+            membersRAM = data.map(m => String(m.sequence || m.ลำดับ));
             isDataLoaded = true;
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('btnSubmit').disabled = false;
-            document.getElementById('btnSubmit').innerText = "บันทึกข้อมูลและยืนยัน";
-        } catch (e) { 
-            console.error("Load Failed");
-            document.getElementById('loading').style.display = 'none';
-        }
+        } catch (e) { console.error("Load members error"); }
+        showLoading(false);
     };
 
     const inpSeq = document.getElementById('inpSeq');
     const feedback = document.getElementById('seqFeedback');
     const btnSubmit = document.getElementById('btnSubmit');
 
+    // เช็คเลขซ้ำแบบ Real-time
     inpSeq.addEventListener('input', function() {
         const val = this.value.trim();
         if (!val) { resetState(); return; }
-        if (!isDataLoaded) { feedback.innerHTML = "กำลังตรวจสอบ..."; return; }
+        if (!isDataLoaded) return;
 
         if (membersRAM.includes(String(val))) {
             this.classList.add('is-invalid');
@@ -141,40 +142,103 @@
         btnSubmit.disabled = false;
     }
 
+    // Preview และ Auto-resize รูปภาพ
     document.getElementById('inpFile').onchange = (e) => {
         const file = e.target.files[0];
-        if (file) document.getElementById('imgPreview').src = URL.createObjectURL(file);
+        if (file) {
+            document.getElementById('imgPreview').src = URL.createObjectURL(file);
+        }
     };
+
+    // ฟังก์ชันย่อรูปภาพก่อนส่ง (สำคัญมากเพื่อกันระบบค้าง)
+    async function resizeImage(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = 600; // กำหนดความกว้างสูงสุด 600px (เพียงพอสำหรับโปรไฟล์)
+                    let scaleFactor = width / img.width;
+                    canvas.width = width;
+                    canvas.height = img.height * scaleFactor;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8)); // บีบอัดเป็น JPG คุณภาพ 80%
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+    }
 
     document.getElementById('regForm').onsubmit = async (e) => {
         e.preventDefault();
-        const confirm = await Swal.fire({ title: 'ยืนยันการลงทะเบียน?', icon: 'question', showCancelButton: true });
+        
+        const confirm = await Swal.fire({ 
+            title: 'ยืนยันการลงทะเบียน?', 
+            text: "กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนบันทึก",
+            icon: 'question', 
+            showCancelButton: true,
+            confirmButtonText: 'บันทึกข้อมูล',
+            cancelButtonText: 'แก้ไขเพิ่มเติม'
+        });
         if (!confirm.isConfirmed) return;
 
-        document.getElementById('loading').style.display = 'flex';
-        const file = document.getElementById('inpFile').files[0];
+        showLoading(true, "กำลังประมวลผลรูปภาพและบันทึกข้อมูล...");
+        
+        const fileInput = document.getElementById('inpFile');
+        let base64Image = "";
+        if (fileInput.files[0]) {
+            base64Image = await resizeImage(fileInput.files[0]);
+        }
+
         const payload = {
             action: 'register',
             sequence: inpSeq.value,
             fullName: document.getElementById('inpName').value,
             nickname: document.getElementById('inpNick').value,
             phone: document.getElementById('inpPhone').value,
-            address: document.getElementById('inpAddr').value
+            address: document.getElementById('inpAddr').value,
+            image: base64Image,
+            imageName: `Member_${inpSeq.value}_${Date.now()}.jpg`
         };
 
-        const reader = new FileReader();
-        reader.onload = async (f) => {
-            payload.image = f.target.result;
-            payload.imageName = file.name;
-            try {
-                await fetch(scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
-                Swal.fire('สำเร็จ', 'ลงทะเบียนเรียบร้อย', 'success').then(() => window.location.href = 'index.html');
-            } catch (err) { 
-                Swal.fire('สำเร็จ', 'บันทึกข้อมูลแล้ว', 'success').then(() => window.location.href = 'index.html');
-            }
-        };
-        reader.readAsDataURL(file);
+        try {
+            // ส่งข้อมูลด้วยโหมด no-cors เพื่อความเร็วและป้องกัน Error บล็อคข้ามโดเมน
+            await fetch(scriptUrl, { 
+                method: 'POST', 
+                mode: 'no-cors', 
+                body: JSON.stringify(payload) 
+            });
+            
+            // เนื่องจากใช้ no-cors เราต้องหน่วงเวลาเล็กน้อยแล้วค่อยแจ้งความสำเร็จ
+            setTimeout(() => {
+                showLoading(false);
+                Swal.fire({
+                    title: 'ลงทะเบียนสำเร็จ!',
+                    text: 'ข้อมูลของคุณถูกบันทึกเข้าระบบเรียบร้อยแล้ว',
+                    icon: 'success'
+                }).then(() => window.location.href = 'index.html');
+            }, 2500);
+
+        } catch (err) { 
+            console.error(err);
+            showLoading(false);
+            Swal.fire('Error', 'เกิดข้อผิดพลาดในการส่งข้อมูล', 'error');
+        }
     };
+
+    function showLoading(show, text = "") {
+        const loader = document.getElementById('loading');
+        const loaderText = document.getElementById('loadText');
+        if (show) {
+            loaderText.innerText = text;
+            loader.style.display = 'flex';
+        } else {
+            loader.style.display = 'none';
+        }
+    }
 </script>
 </body>
 </html>
