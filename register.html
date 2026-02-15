@@ -27,7 +27,7 @@
 </div>
 
 <nav class="navbar navbar-dark shadow-sm mb-4">
-    <div class="container d-flex justify-content-between align-items-center">
+    <div class="container d-flex justify-content-between align-items-center text-start">
         <span class="navbar-brand mb-0 h1" style="font-size: 16px;"><i class="fas fa-heartbeat me-2"></i>ระบบลงทะเบียนวิทยากร</span>
         <a href="index.html" class="btn btn-outline-light btn-sm fw-bold"><i class="fas fa-home me-1"></i>กลับหน้าหลัก</a>
     </div>
@@ -43,7 +43,7 @@
                 </div>
 
                 <form id="regForm">
-                    <div class="row g-3">
+                    <div class="row g-3 text-start">
                         <div class="col-md-5 mx-auto text-center mb-4">
                             <label class="form-label fw-bold text-primary">เลขลำดับที่ในรุ่น</label>
                             <input type="number" id="inpSeq" class="form-control form-control-lg text-center fw-bold border-primary shadow-sm" placeholder="ระบุเลข" required>
@@ -52,8 +52,8 @@
 
                         <div class="col-12 border-bottom mb-3"></div>
 
-                        <div class="col-12 text-center mb-3 text-start">
-                            <label class="form-label fw-bold d-block mb-2">รูปถ่ายโปรไฟล์ (3:4)</label>
+                        <div class="col-12 text-center mb-3">
+                            <label class="form-label fw-bold d-block mb-2 text-start">รูปถ่ายโปรไฟล์ (3:4)</label>
                             <div class="preview-container mb-2">
                                 <img id="imgPreview" src="https://via.placeholder.com/300x400?text=3:4+Photo">
                             </div>
@@ -61,22 +61,22 @@
                                 <i class="fas fa-camera me-1"></i> เลือกรูปถ่ายหน้าตรง
                                 <input type="file" id="inpFile" hidden accept="image/*" required>
                             </label>
-                            <p class="text-muted extra-small mt-1" style="font-size: 0.7rem;">* ระบบจะย่อขนาดรูปให้อัตโนมัติเพื่อความรวดเร็ว</p>
+                            <p class="text-muted extra-small mt-1 text-center" style="font-size: 0.7rem;">* ระบบจะย่อขนาดรูปให้อัตโนมัติเพื่อความรวดเร็ว</p>
                         </div>
 
-                        <div class="col-md-12 text-start">
+                        <div class="col-md-12">
                             <label class="form-label fw-bold">ชื่อ - นามสกุล</label>
                             <input type="text" id="inpName" class="form-control" placeholder="กรอกชื่อและนามสกุล" required>
                         </div>
-                        <div class="col-md-6 text-start">
+                        <div class="col-md-6">
                             <label class="form-label fw-bold">ชื่อเล่น</label>
                             <input type="text" id="inpNick" class="form-control" required>
                         </div>
-                        <div class="col-md-6 text-start">
+                        <div class="col-md-6">
                             <label class="form-label fw-bold">เบอร์โทรศัพท์</label>
                             <input type="tel" id="inpPhone" class="form-control" placeholder="0XXXXXXXXX" required>
                         </div>
-                        <div class="col-12 text-start">
+                        <div class="col-12">
                             <label class="form-label fw-bold">ที่อยู่ปัจจุบัน</label>
                             <textarea id="inpAddr" class="form-control" rows="2" placeholder="ระบุที่อยู่เพื่อใช้ติดต่อ"></textarea>
                         </div>
@@ -95,18 +95,15 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // ใช้ Script URL เดิมของคุณชัยชนะ
     const scriptUrl = 'https://script.google.com/macros/s/AKfycbxOJGohq26z4zmHuxEELdIrndEqnK_qHBKil0B_yhmQGZNG_tfGl-uEIPFdLcv339ui/exec';
     let membersRAM = [];
     let isDataLoaded = false;
 
-    // โหลดลำดับมาเช็คซ้ำ
     window.onload = async () => {
         showLoading(true, "กำลังตรวจสอบระบบ...");
         try {
             const res = await fetch(`${scriptUrl}?action=getMembers&t=${Date.now()}`);
             const data = await res.json();
-            // เก็บเฉพาะลำดับไว้เช็คซ้ำ
             membersRAM = data.map(m => String(m.sequence || m.ลำดับ));
             isDataLoaded = true;
         } catch (e) { console.error("Load members error"); }
@@ -117,7 +114,6 @@
     const feedback = document.getElementById('seqFeedback');
     const btnSubmit = document.getElementById('btnSubmit');
 
-    // เช็คเลขซ้ำแบบ Real-time
     inpSeq.addEventListener('input', function() {
         const val = this.value.trim();
         if (!val) { resetState(); return; }
@@ -142,7 +138,6 @@
         btnSubmit.disabled = false;
     }
 
-    // Preview และ Auto-resize รูปภาพ
     document.getElementById('inpFile').onchange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -150,7 +145,6 @@
         }
     };
 
-    // ฟังก์ชันย่อรูปภาพก่อนส่ง (สำคัญมากเพื่อกันระบบค้าง)
     async function resizeImage(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -158,13 +152,13 @@
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    let width = 600; // กำหนดความกว้างสูงสุด 600px (เพียงพอสำหรับโปรไฟล์)
+                    let width = 600; 
                     let scaleFactor = width / img.width;
                     canvas.width = width;
                     canvas.height = img.height * scaleFactor;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.8)); // บีบอัดเป็น JPG คุณภาพ 80%
+                    resolve(canvas.toDataURL('image/jpeg', 0.8)); 
                 }
                 img.src = event.target.result;
             }
@@ -177,7 +171,6 @@
         
         const confirm = await Swal.fire({ 
             title: 'ยืนยันการลงทะเบียน?', 
-            text: "กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนบันทึก",
             icon: 'question', 
             showCancelButton: true,
             confirmButtonText: 'บันทึกข้อมูล',
@@ -185,7 +178,7 @@
         });
         if (!confirm.isConfirmed) return;
 
-        showLoading(true, "กำลังประมวลผลรูปภาพและบันทึกข้อมูล...");
+        showLoading(true, "กำลังบันทึกข้อมูล...");
         
         const fileInput = document.getElementById('inpFile');
         let base64Image = "";
@@ -205,27 +198,29 @@
         };
 
         try {
-            // ส่งข้อมูลด้วยโหมด no-cors เพื่อความเร็วและป้องกัน Error บล็อคข้ามโดเมน
             await fetch(scriptUrl, { 
                 method: 'POST', 
                 mode: 'no-cors', 
                 body: JSON.stringify(payload) 
             });
             
-            // เนื่องจากใช้ no-cors เราต้องหน่วงเวลาเล็กน้อยแล้วค่อยแจ้งความสำเร็จ
+            // --- จุดแก้ไข: ปิดตัวโหลดก่อนจะโชว์ป๊อปอัพสำเร็จ ---
             setTimeout(() => {
-                showLoading(false);
+                showLoading(false); // ปิดหน้าจอขาวที่หมุนๆ ทันที
+                
                 Swal.fire({
                     title: 'ลงทะเบียนสำเร็จ!',
-                    text: 'ข้อมูลของคุณถูกบันทึกเข้าระบบเรียบร้อยแล้ว',
-                    icon: 'success'
-                }).then(() => window.location.href = 'index.html');
-            }, 2500);
+                    text: 'ข้อมูลของคุณถูกส่งเข้าระบบเรียบร้อยแล้ว',
+                    icon: 'success',
+                    confirmButtonText: 'ตกลง'
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+            }, 2000); 
 
         } catch (err) { 
-            console.error(err);
             showLoading(false);
-            Swal.fire('Error', 'เกิดข้อผิดพลาดในการส่งข้อมูล', 'error');
+            Swal.fire('Error', 'เกิดข้อผิดพลาด', 'error');
         }
     };
 
